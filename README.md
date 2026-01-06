@@ -29,7 +29,7 @@ Create a `.env` file in the root directory:
 PORT=3000
 DB_HOST=localhost
 DB_USER=root
-DB_PASS=@nImesh12
+DB_PASS=
 DB_NAME=civic_issue_platform
 JWT_SECRET=your_jwt_secret_key
 GOOGLE_MAPS_API_KEY=YOUR_GOOGLE_MAPS_API_KEY
