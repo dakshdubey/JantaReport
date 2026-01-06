@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Status | JantaReport</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body class="bg-slate-50 scroll-smooth">
+    <!-- Navbar -->
+    <nav
+        class="fixed top-0 left-0 right-0 z-[100] px-6 py-6 md:px-12 backdrop-blur-md border-b border-white/20 bg-white/80">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <a href="index.html" class="flex items-center gap-3">
+                <div
+                    class="w-10 h-10 grad-main rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20">
+                    <span class="text-white font-black text-xl">J</span>
+                </div>
+                <span class="text-xl font-black text-slate-900 tracking-tighter uppercase">JantaReport</span>
+            </a>
+            <a href="index.html"
+                class="text-xs font-black text-slate-900 uppercase tracking-widest px-6 py-3 rounded-xl hover:bg-white transition-all">←
+                Back to Home</a>
+        </div>
+    </nav>
+
+    <!-- Content -->
+    <main class="pt-32 pb-20 px-6">
+        <div class="max-w-4xl mx-auto">
+            <div class="mb-12 scroll-reveal">
+                <p class="text-[11px] font-black text-blue-600 uppercase tracking-[0.4em] mb-4">Real-Time Monitoring</p>
+                <h1 class="text-5xl md:text-6xl font-black text-slate-900 tracking-tight mb-6">System Status</h1>
+                <div class="flex items-center gap-3">
+                    <div class="w-3 h-3 bg-emerald-500 rounded-full animate-pulse"></div>
+                    <p class="text-slate-500 font-black uppercase tracking-widest text-sm">All Systems Operational</p>
+                </div>
+            </div>
+
+            <div class="space-y-8">
+                <!-- Overall Status -->
+                <section class="card p-10 scroll-reveal">
+                    <h2 class="text-2xl font-black text-slate-900 mb-6">Infrastructure Health</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="bg-emerald-50 p-6 rounded-2xl border border-emerald-200">
+                            <div class="flex items-center justify-between mb-2">
+                                <h3 class="font-black text-slate-900">API Gateway</h3>
+                                <span
+                                    class="text-xs font-black text-emerald-600 uppercase tracking-widest">Operational</span>
+                            </div>
+                            <p class="text-sm text-slate-600 font-medium">Uptime: 99.98%</p>
+                            <p class="text-xs text-slate-500 mt-1">Last checked: 2 minutes ago</p>
+                        </div>
+                        <div class="bg-emerald-50 p-6 rounded-2xl border border-emerald-200">
+                            <div class="flex items-center justify-between mb-2">
+                                <h3 class="font-black text-slate-900">Database</h3>
+                                <span
+                                    class="text-xs font-black text-emerald-600 uppercase tracking-widest">Operational</span>
+                            </div>
+                            <p class="text-sm text-slate-600 font-medium">Response Time: 12ms</p>
+                            <p class="text-xs text-slate-500 mt-1">Last checked: 1 minute ago</p>
+                        </div>
+                        <div class="bg-emerald-50 p-6 rounded-2xl border border-emerald-200">
+                            <div class="flex items-center justify-between mb-2">
+                                <h3 class="font-black text-slate-900">WebSocket Sync</h3>
+                                <span
+                                    class="text-xs font-black text-emerald-600 uppercase tracking-widest">Operational</span>
+                            </div>
+                            <p class="text-sm text-slate-600 font-medium">Active Connections: 1,247</p>
+                            <p class="text-xs text-slate-500 mt-1">Last checked: 30 seconds ago</p>
+                        </div>
+                        <div class="bg-emerald-50 p-6 rounded-2xl border border-emerald-200">
+                            <div class="flex items-center justify-between mb-2">
+                                <h3 class="font-black text-slate-900">AI Intelligence</h3>
+                                <span
+                                    class="text-xs font-black text-emerald-600 uppercase tracking-widest">Operational</span>
+                            </div>
+                            <p class="text-sm text-slate-600 font-medium">Prediction Accuracy: 94%</p>
+                            <p class="text-xs text-slate-500 mt-1">Last checked: 5 minutes ago</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Performance Metrics -->
+                <section class="card p-10 scroll-reveal">
+                    <h2 class="text-2xl font-black text-slate-900 mb-6">Performance Metrics</h2>
+                    <div class="space-y-6">
+                        <div>
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-sm font-black text-slate-900">API Response Time</span>
+                                <span class="text-sm font-black text-blue-600">12ms avg</span>
+                            </div>
+                            <div class="w-full bg-slate-200 rounded-full h-2">
+                                <div class="bg-blue-600 h-2 rounded-full" style="width: 95%"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-sm font-black text-slate-900">Database Query Speed</span>
+                                <span class="text-sm font-black text-emerald-600">8ms avg</span>
+                            </div>
+                            <div class="w-full bg-slate-200 rounded-full h-2">
+                                <div class="bg-emerald-600 h-2 rounded-full" style="width: 98%"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-sm font-black text-slate-900">File Upload Success Rate</span>
+                                <span class="text-sm font-black text-blue-600">99.7%</span>
+                            </div>
+                            <div class="w-full bg-slate-200 rounded-full h-2">
+                                <div class="bg-blue-600 h-2 rounded-full" style="width: 99.7%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Recent Updates -->
+                <section class="card p-10 scroll-reveal">
+                    <h2 class="text-2xl font-black text-slate-900 mb-6">Recent Updates</h2>
+                    <div class="space-y-6">
+                        <div class="flex gap-4">
+                            <div class="flex-shrink-0 w-2 h-2 bg-emerald-500 rounded-full mt-2"></div>
+                            <div>
+                                <p class="font-black text-slate-900 mb-1">AI Chat Assistant Deployed</p>
+                                <p class="text-sm text-slate-600 font-medium">Emotion-aware chatbot now live for all
+                                    users</p>
+                                <p class="text-xs text-slate-400 mt-1">December 25, 2025 - 20:30 IST</p>
+                            </div>
+                        </div>
+                        <div class="flex gap-4">
+                            <div class="flex-shrink-0 w-2 h-2 bg-emerald-500 rounded-full mt-2"></div>
+                            <div>
+                                <p class="font-black text-slate-900 mb-1">Real-Time Sync Upgraded</p>
+                                <p class="text-sm text-slate-600 font-medium">WebSocket infrastructure enhanced for
+                                    faster updates</p>
+                                <p class="text-xs text-slate-400 mt-1">December 25, 2025 - 18:45 IST</p>
+                            </div>
+                        </div>
+                        <div class="flex gap-4">
+                            <div class="flex-shrink-0 w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
+                            <div>
+                                <p class="font-black text-slate-900 mb-1">Multimedia Upload Limit Increased</p>
+                                <p class="text-sm text-slate-600 font-medium">Now supporting up to 100MB video uploads
+                                </p>
+                                <p class="text-xs text-slate-400 mt-1">December 25, 2025 - 16:20 IST</p>
+                            </div>
+                        </div>
+                        <div class="flex gap-4">
+                            <div class="flex-shrink-0 w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
+                            <div>
+                                <p class="font-black text-slate-900 mb-1">Mobile UI Optimization</p>
+                                <p class="text-sm text-slate-600 font-medium">Enhanced responsive design for admin
+                                    dashboards</p>
+                                <p class="text-xs text-slate-400 mt-1">December 25, 2025 - 14:10 IST</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Scheduled Maintenance -->
+                <section class="card p-10 scroll-reveal bg-blue-50 border-blue-200">
+                    <h2 class="text-2xl font-black text-slate-900 mb-4">Scheduled Maintenance</h2>
+                    <p class="text-slate-600 font-medium">No maintenance scheduled at this time. All systems running
+                        optimally.</p>
+                </section>
+            </div>
+        </div>
+    </main>
+
+    <script src="js/smooth-scroll.js"></script>
+</body>
+
+</html>

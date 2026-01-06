@@ -1,0 +1,973 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Authority Hub | JantaReport</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="../css/style.css">
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script src="https://unpkg.com/@googlemaps/markerclusterer/dist/index.min.js"></script>
+</head>
+
+<body class="bg-slate-50 min-h-screen overflow-hidden flex flex-col">
+    <!-- Premium Header -->
+    <nav class="glass sticky top-0 z-[60] px-4 md:px-8 py-4 border-b border-slate-200/50">
+        <div class="max-w-[1600px] mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-3 md:gap-4">
+                <button onclick="toggleSidebar()" class="md:hidden p-2 hover:bg-slate-100 rounded-lg transition-colors">
+                    <svg class="w-6 h-6 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M4 6h16M4 12h16M4 18h16" />
+                    </svg>
+                </button>
+                <div
+                    class="w-10 h-10 grad-main rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20">
+                    <span class="text-white font-black text-xl">J</span>
+                </div>
+                <div>
+                    <h1 class="text-lg font-black tracking-tight text-slate-900 leading-none">Authority Hub</h1>
+                    <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Operational Command
+                    </p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-6">
+                <div class="text-right hidden md:block">
+                    <p id="adminName" class="text-sm font-black text-slate-900 leading-none mb-1"></p>
+                    <p id="adminCity" class="text-[10px] text-blue-600 font-black uppercase tracking-widest"></p>
+                </div>
+                <div class="h-8 w-[1px] bg-slate-200"></div>
+                <button onclick="openAnalytics()"
+                    class="btn-secondary text-xs uppercase tracking-widest px-4 py-2 border-slate-200 hover:border-blue-300 hover:text-blue-600 transition-colors">
+                    Future Sight AI
+                </button>
+                <div class="h-8 w-[1px] bg-slate-200"></div>
+                <button onclick="auth.logout()"
+                    class="btn-ghost text-rose-600 hover:bg-rose-50 text-sm font-bold">Terminate Session</button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="flex flex-1 overflow-hidden relative">
+        <!-- Mobile Overlays -->
+        <div id="sidebarOverlay" onclick="toggleSidebar()"
+            class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[90] hidden md:hidden"></div>
+        <div id="detailOverlay" onclick="closeDetails()"
+            class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[100] hidden md:hidden"></div>
+
+        <!-- Sidebar: Issue Queue -->
+        <aside id="sidebar"
+            class="fixed inset-y-0 left-0 w-[85vw] md:w-[400px] bg-white border-r border-slate-200 flex flex-col z-[100] md:relative md:z-20 shadow-2xl md:shadow-none -translate-x-full md:translate-x-0 transition-transform duration-300">
+            <div class="p-6 md:p-8 space-y-6">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-xl font-black text-slate-900 tracking-tight">Intelligence Queue</h2>
+                    <div class="flex items-center gap-3">
+                        <span id="queueCount"
+                            class="px-2.5 py-1 bg-slate-100 text-slate-500 text-[10px] font-black rounded-lg tabular-nums">0</span>
+                        <button onclick="toggleSidebar()"
+                            class="md:hidden p-1.5 hover:bg-slate-100 rounded-lg">&times;</button>
+                    </div>
+                </div>
+
+                <div class="flex gap-3">
+                    <div class="relative flex-1">
+                        <select id="statusFilter" onchange="loadIssues()"
+                            class="w-full pl-4 pr-10 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-600 appearance-none focus:ring-4 focus:ring-blue-100 outline-none transition-all">
+                            <option value="">All Active Reports</option>
+                            <option value="SUBMITTED">Pending Review</option>
+                            <option value="IN_PROGRESS">Operational</option>
+                            <option value="RESOLVED">Completed</option>
+                            <option value="REJECTED">Dismissed</option>
+                        </select>
+                        <div class="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="issueQueue" class="flex-1 overflow-y-auto px-4 pb-8 space-y-3">
+                <!-- Queue Items -->
+            </div>
+        </aside>
+
+        <!-- Main Workspace: Map -->
+        <main class="flex-1 relative z-10 bg-slate-100">
+            <div id="adminMap" class="w-full h-full"></div>
+
+            <!-- Advanced Map Controls -->
+            <div class="absolute top-6 left-6 flex flex-col gap-3 z-20">
+                <!-- Map Type Control -->
+                <div class="bg-white/90 backdrop-blur-md p-1.5 rounded-xl border border-slate-200 shadow-lg flex gap-1">
+                    <button onclick="setMapType('roadmap')" id="btn-roadmap"
+                        class="px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-100 text-slate-900 shadow-sm transition-all">Map</button>
+                    <button onclick="setMapType('hybrid')" id="btn-hybrid"
+                        class="px-3 py-1.5 rounded-lg text-xs font-bold text-slate-500 hover:bg-slate-50 transition-all">Satellite</button>
+                </div>
+
+                <!-- Visual Filters -->
+                <div
+                    class="bg-white/90 backdrop-blur-md p-1.5 rounded-xl border border-slate-200 shadow-lg space-y-2 w-48">
+                    <p class="px-2 text-[10px] font-black text-slate-400 uppercase tracking-widest">Visual Layers</p>
+
+                    <button onclick="toggleHeatmap()" id="heatmapBtn"
+                        class="w-full px-3 py-2 rounded-lg text-xs font-bold text-slate-600 hover:bg-slate-50 hover:text-blue-600 transition-all flex items-center justify-between group">
+                        <span class="flex items-center gap-2">
+                            <svg class="w-4 h-4 text-slate-400 group-hover:text-blue-500" fill="none"
+                                viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M9.879 16.121A3 3 0 1012.015 11L11 14H9c0 .768.293 1.536.879 2.121z" />
+                            </svg>
+                            Heatmap
+                        </span>
+                        <div id="heatmap-toggle" class="w-8 h-4 bg-slate-200 rounded-full relative transition-colors">
+                            <div
+                                class="absolute inset-y-0 left-0 w-4 h-4 bg-white rounded-full shadow-sm transform transition-transform scale-90">
+                            </div>
+                        </div>
+                    </button>
+
+                    <button onclick="toggleClustering()" id="clusterBtn"
+                        class="w-full px-3 py-2 rounded-lg text-xs font-bold text-slate-600 hover:bg-slate-50 hover:text-blue-600 transition-all flex items-center justify-between group">
+                        <span class="flex items-center gap-2">
+                            <svg class="w-4 h-4 text-slate-400 group-hover:text-blue-500" fill="none"
+                                viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                            </svg>
+                            Clustering
+                        </span>
+                        <div id="cluster-toggle" class="w-8 h-4 bg-blue-500 rounded-full relative transition-colors">
+                            <div
+                                class="absolute inset-y-0 right-0 w-4 h-4 bg-white rounded-full shadow-sm transform transition-transform scale-90">
+                            </div>
+                        </div>
+                    </button>
+                </div>
+
+                <!-- Quick Filters -->
+                <div class="bg-white/90 backdrop-blur-md p-1.5 rounded-xl border border-slate-200 shadow-lg w-48">
+                    <p class="px-2 text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Quick Filters
+                    </p>
+                    <select id="mapFilter" onchange="applyMapFilters()"
+                        class="w-full bg-slate-50 border-0 rounded-lg text-[11px] font-bold text-slate-600 py-2 focus:ring-0 cursor-pointer">
+                        <option value="ALL">All Priorities</option>
+                        <option value="CRITICAL">Critical Only</option>
+                        <option value="MODERATE">Moderate Only</option>
+                        <option value="LOW">Low Priority</option>
+                    </select>
+                </div>
+
+                <!-- INNOVATION LABS: AI & SURVEILLANCE -->
+                <div class="flex gap-2 mt-2">
+                    <!-- Voice Command -->
+                    <button onclick="toggleVoice()" id="voiceBtn"
+                        class="h-10 w-10 flex items-center justify-center bg-slate-900 rounded-xl shadow-xl hover:bg-slate-800 transition-all group relative overflow-hidden">
+                        <div id="voiceWave" class="absolute inset-0 bg-blue-500 opacity-0 transition-opacity"></div>
+                        <svg class="w-5 h-5 text-white relative z-10" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                        </svg>
+                    </button>
+
+                    <!-- Virtual Patrol -->
+                    <button onclick="togglePatrol()" id="patrolBtn"
+                        class="flex-1 h-10 px-4 bg-indigo-600 rounded-xl shadow-xl flex items-center justify-center gap-2 hover:bg-indigo-700 transition-all">
+                        <svg class="w-5 h-5 text-white animate-pulse" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                        </svg>
+                        <span class="text-xs font-black text-white uppercase tracking-wider">Patrol Mode</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Live Surveillance Overlay -->
+            <div id="patrolOverlay" class="absolute inset-0 pointer-events-none z-0 hidden">
+                <div class="absolute inset-0 border-[20px] border-indigo-500/10"></div>
+                <div class="absolute top-8 right-8 flex items-center gap-3">
+                    <div class="w-3 h-3 bg-red-500 rounded-full animate-ping"></div>
+                    <span
+                        class="text-xs font-black text-red-500 uppercase tracking-widest bg-white/80 px-2 py-1 rounded">Live
+                        Surveillance Feed</span>
+                </div>
+                <div
+                    class="absolute bottom-8 left-8 text-indigo-900/50 font-black text-6xl opacity-20 tracking-tighter">
+                    DRONE VIEW // CAM-01</div>
+            </div>
+
+            <!-- Enhanced Detail Panel -->
+            <div id="detailPanel"
+                class="fixed inset-y-0 right-0 w-full md:absolute md:top-8 md:right-8 md:w-[400px] md:max-h-[calc(100vh-120px)] overflow-hidden hidden animate-fade-in z-[110] md:z-30">
+                <div
+                    class="card bg-white md:bg-white/95 md:backdrop-blur-xl border-white/40 shadow-2xl md:shadow-[0_32px_64px_-16px_rgba(0,0,0,0.2)] flex flex-col h-full md:max-h-full">
+                    <div
+                        class="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50 shrink-0">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 grad-main rounded-lg flex items-center justify-center text-white">
+                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                            </div>
+                            <h3 id="detailTitle" class="font-black text-slate-900 tracking-tight line-clamp-1">
+                                Intelligence Details</h3>
+                        </div>
+                        <button onclick="closeDetails()"
+                            class="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-all">&times;</button>
+                    </div>
+
+                    <div class="p-8 overflow-y-auto space-y-8">
+                        <div class="flex justify-between items-center">
+                            <span id="detailStatus" class="status-badge"></span>
+                            <span id="detailDate"
+                                class="text-[10px] font-black text-slate-400 uppercase tracking-widest"></span>
+                        </div>
+
+                        <div class="space-y-2">
+                            <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Report
+                                Description</label>
+                            <p id="detailDesc" class="text-sm text-slate-700 font-medium leading-relaxed"></p>
+                        </div>
+
+                        <div id="mediaContainer" class="space-y-6 hidden">
+                            <div id="imageBox" class="hidden">
+                                <label
+                                    class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-2 block">Captured
+                                    Image</label>
+                                <img id="detailImage" src=""
+                                    class="w-full rounded-2xl shadow-lg border border-slate-100 cursor-zoom-in hover:scale-[1.02] transition-transform"
+                                    onclick="window.open(this.src)">
+                            </div>
+                            <div id="videoBox" class="hidden">
+                                <label
+                                    class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-2 block">Video
+                                    Stream</label>
+                                <video id="detailVideo" controls
+                                    class="w-full rounded-2xl shadow-lg border border-slate-100"></video>
+                            </div>
+                        </div>
+
+                        <!-- Operational Timeline (History) -->
+                        <div id="historySection" class="pt-8 border-t border-slate-100 space-y-4 hidden">
+                            <label
+                                class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Operational
+                                Timeline</label>
+                            <div id="historyTimeline" class="space-y-4">
+                                <!-- Timeline items injected here -->
+                            </div>
+                        </div>
+
+                        <div class="pt-8 border-t border-slate-100 space-y-6">
+                            <div class="inline-flex items-center gap-2 px-3 py-1 bg-slate-900 rounded-lg">
+                                <span class="text-[9px] font-black text-white uppercase tracking-[0.2em]">Operational
+                                    Action</span>
+                            </div>
+
+                            <div class="space-y-4">
+                                <div class="space-y-2">
+                                    <label
+                                        class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Update
+                                        Status</label>
+                                    <select id="updateStatus"
+                                        class="input-field py-3 text-xs font-bold appearance-none bg-white">
+                                        <option value="IN_PROGRESS">Mark as In-Progress</option>
+                                        <option value="RESOLVED">Mark as Resolved</option>
+                                        <option value="REJECTED">Dismiss Report</option>
+                                    </select>
+                                </div>
+
+                                <div class="space-y-2">
+                                    <label
+                                        class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Operational
+                                        Remarks</label>
+                                    <textarea id="updateRemark"
+                                        class="input-field text-xs font-medium resize-none bg-white"
+                                        placeholder="Provide instructions or resolution notes..." rows="3"></textarea>
+                                </div>
+
+                                <button id="updateBtn" onclick="submitStatusUpdate()"
+                                    class="btn-primary w-full py-4 text-xs tracking-widest uppercase">Execute
+                                    Update</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Map Legend -->
+            <div
+                class="absolute bottom-6 left-6 bg-white/90 backdrop-blur-md px-4 py-3 rounded-2xl border border-slate-200 shadow-xl z-20 flex gap-6">
+                <div class="flex items-center gap-2">
+                    <div class="w-3 h-3 rounded-full bg-[#ef4444]"></div>
+                    <span class="text-[10px] font-black text-slate-600 uppercase tracking-widest">Unfixed</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <div class="w-3 h-3 rounded-full bg-[#f59e0b]"></div>
+                    <span class="text-[10px] font-black text-slate-600 uppercase tracking-widest">In Progress</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <div class="w-3 h-3 rounded-full bg-[#10b981]"></div>
+                    <span class="text-[10px] font-black text-slate-600 uppercase tracking-widest">Resolved</span>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- PREDICTIVE ANALYTICS MODAL -->
+    <div id="analyticsModal"
+        class="fixed inset-0 bg-slate-900/80 backdrop-blur-xl hidden z-[200] flex items-center justify-center p-6">
+        <div
+            class="bg-white w-full max-w-5xl h-[85vh] rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col animate-scale-in">
+            <!-- Header -->
+            <div class="p-8 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 bg-indigo-100 text-indigo-600 rounded-2xl flex items-center justify-center">
+                        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h2 class="text-2xl font-black text-slate-900 tracking-tighter">Predictive Intelligence</h2>
+                        <div class="flex items-center gap-2">
+                            <span class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
+                            <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">AI Forecast Engine
+                                Active</p>
+                        </div>
+                    </div>
+                </div>
+                <button onclick="document.getElementById('analyticsModal').classList.add('hidden')"
+                    class="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-all">
+                    <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Dashboard Grid -->
+            <div class="flex-1 overflow-y-auto p-8 bg-slate-50">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <!-- Score Card -->
+                    <div class="bg-indigo-600 text-white p-6 rounded-[2rem] relative overflow-hidden group">
+                        <div class="relative z-10">
+                            <p class="text-[10px] font-bold text-indigo-200 uppercase tracking-widest mb-1">City
+                                Efficiency Grade</p>
+                            <h3 class="text-6xl font-black">A-</h3>
+                            <p class="text-xs text-indigo-100 mt-2 font-medium">Top 5% National Ranking</p>
+                        </div>
+                        <div
+                            class="absolute -right-8 -bottom-8 w-32 h-32 bg-white/10 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-700">
+                        </div>
+                    </div>
+                    <!-- Forecast Card -->
+                    <div class="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm">
+                        <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Projected Issues
+                            (Next 7 Days)</p>
+                        <div class="flex items-end gap-1 h-24 mb-2">
+                            <div class="flex-1 bg-blue-100 rounded-t-lg h-[40%] hover:bg-blue-500 transition-colors">
+                            </div>
+                            <div class="flex-1 bg-blue-100 rounded-t-lg h-[60%] hover:bg-blue-500 transition-colors">
+                            </div>
+                            <div class="flex-1 bg-blue-100 rounded-t-lg h-[30%] hover:bg-blue-500 transition-colors">
+                            </div>
+                            <div class="flex-1 bg-blue-100 rounded-t-lg h-[80%] hover:bg-blue-500 transition-colors">
+                            </div>
+                            <div class="flex-1 bg-blue-100 rounded-t-lg h-[50%] hover:bg-blue-500 transition-colors">
+                            </div>
+                            <div class="flex-1 bg-blue-500 rounded-t-lg h-[90%] shadow-lg shadow-blue-500/30"></div>
+                            <div class="flex-1 bg-blue-100 rounded-t-lg h-[70%] hover:bg-blue-500 transition-colors">
+                            </div>
+                        </div>
+                        <div class="flex justify-between text-[9px] font-bold text-slate-400 uppercase">
+                            <span>Mon</span><span>Sat</span><span>Sun</span>
+                        </div>
+                    </div>
+                    <!-- Budget Card -->
+                    <div class="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm">
+                        <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Estimated Repair
+                            Budget</p>
+                        <h3 class="text-4xl font-black text-slate-900">₹4.2L</h3>
+                        <div class="w-full bg-slate-100 rounded-full h-2 mt-4 overflow-hidden">
+                            <div class="bg-emerald-500 h-full w-[65%] rounded-full"></div>
+                        </div>
+                        <p class="text-[9px] text-slate-400 font-bold mt-2 text-right">65% of Monthly Allocation</p>
+                    </div>
+                </div>
+
+                <!-- Deep Dive Table -->
+                <div class="bg-white rounded-[2.5rem] border border-slate-100 p-8">
+                    <h4 class="text-lg font-black text-slate-900 tracking-tight mb-6">High Probability Failure Zones
+                    </h4>
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr
+                                class="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100">
+                                <th class="pb-4 pl-4">Zone Sector</th>
+                                <th class="pb-4">Risk Probability</th>
+                                <th class="pb-4">Infrastructure Type</th>
+                                <th class="pb-4 text-right pr-4">Action Required</th>
+                            </tr>
+                        </thead>
+                        <tbody class="text-xs font-bold text-slate-600">
+                            <tr class="border-b border-slate-50 hover:bg-slate-50 transition-colors group">
+                                <td class="py-4 pl-4 text-slate-900">Sector 14 - Market Rd</td>
+                                <td class="py-4"><span class="bg-rose-50 text-rose-600 px-2 py-1 rounded-lg">94%
+                                        Critical</span></td>
+                                <td class="py-4">Road Surface</td>
+                                <td class="py-4 text-right pr-4"><button class="text-blue-600 hover:underline">Dispatch
+                                        Inspection</button></td>
+                            </tr>
+                            <tr class="border-b border-slate-50 hover:bg-slate-50 transition-colors group">
+                                <td class="py-4 pl-4 text-slate-900">Block C - Pipeline</td>
+                                <td class="py-4"><span class="bg-amber-50 text-amber-600 px-2 py-1 rounded-lg">78%
+                                        Moderate</span></td>
+                                <td class="py-4">Water Supply</td>
+                                <td class="py-4 text-right pr-4"><button class="text-blue-600 hover:underline">Monitor
+                                        Sensors</button></td>
+                            </tr>
+                            <tr class="hover:bg-slate-50 transition-colors group">
+                                <td class="py-4 pl-4 text-slate-900">Main Square Lights</td>
+                                <td class="py-4"><span class="bg-emerald-50 text-emerald-600 px-2 py-1 rounded-lg">22%
+                                        Low</span></td>
+                                <td class="py-4">Electricity</td>
+                                <td class="py-4 text-right pr-4"><button class="text-blue-600 hover:underline">Schedule
+                                        Maintenance</button></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/api.js"></script>
+    <script>
+        let map;
+        let markers = [];
+        let allIssues = [];
+        let socket;
+        let heatmap;
+        let markerCluster;
+        let isHeatmapEnabled = false;
+        let isClusteringEnabled = true;
+        let currentMapFilter = 'ALL';
+
+        // Innovation Labs
+        let recognition;
+        let isListening = false;
+        let patrolInterval;
+        let isPatrolActive = false;
+
+        window.onload = async () => {
+            const user = auth.getUser();
+            if (!user || (user.role !== 'CITY_ADMIN' && user.role !== 'SUPER_ADMIN')) {
+                return window.location.href = 'login.html';
+            }
+            document.getElementById('adminName').textContent = user.name;
+            document.getElementById('adminCity').textContent = user.city_id ? `District Hub ${user.city_id}` : 'Federal Admin';
+
+            const config = await api.getConfig();
+            loadGoogleMaps(config.googleMapsApiKey);
+            loadIssues();
+            initSocket(user);
+            initVoiceControl();
+
+            // Close sidebar on mobile when window resizes to desktop
+            window.addEventListener('resize', () => {
+                if (window.innerWidth >= 768) {
+                    document.getElementById('sidebar').classList.remove('-translate-x-full');
+                }
+            });
+        };
+
+        function initSocket(user) {
+            socket = io();
+
+            socket.on('connect', () => {
+                console.log('Real-time sync established');
+                if (user.city_id) socket.emit('join-city', user.city_id);
+                else socket.emit('join-global');
+            });
+
+            socket.on('new_issue', (issue) => {
+                console.log('New Intelligence Incoming:', issue);
+                allIssues.unshift(issue);
+                renderQueue(allIssues);
+                updateMarkers(allIssues);
+                document.getElementById('queueCount').textContent = allIssues.length;
+            });
+
+            socket.on('status_updated', ({ issueId, newStatus }) => {
+                const issue = allIssues.find(i => i.id === issueId);
+                if (issue) {
+                    issue.status = newStatus;
+                    renderQueue(allIssues);
+                    updateMarkers(allIssues);
+                }
+            });
+        }
+
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            sidebar.classList.toggle('-translate-x-full');
+            overlay.classList.toggle('hidden');
+        }
+
+        function loadGoogleMaps(key) {
+            const script = document.createElement('script');
+            script.src = `https://maps.googleapis.com/maps/api/js?key=${key}&libraries=visualization&callback=initMap`;
+            script.async = true;
+            script.defer = true;
+            document.head.appendChild(script);
+        }
+
+        function initMap() {
+            map = new google.maps.Map(document.getElementById('adminMap'), {
+                center: { lat: 20.5937, lng: 78.9629 }, // Center of India
+                zoom: 5,
+                styles: [
+                    { "featureType": "all", "elementType": "labels.text.fill", "stylers": [{ "color": "#7c93a3" }, { "lightness": "-10" }] },
+                    { "featureType": "water", "elementType": "geometry", "stylers": [{ "color": "#cfe2f3" }, { "lightness": "17" }] },
+                    { "featureType": "landscape", "stylers": [{ "color": "#f8fafc" }] }
+                ],
+                disableDefaultUI: true,
+                zoomControl: true,
+                mapTypeControl: false, // We use custom controls
+                zoomControlOptions: { position: google.maps.ControlPosition.RIGHT_CENTER }
+            });
+
+            // Initialize Heatmap
+            heatmap = new google.maps.visualization.HeatmapLayer({
+                data: [],
+                map: null,
+                radius: 30,
+                opacity: 0.8
+            });
+
+            // Initial render of markers if data loaded before map
+            if (allIssues.length > 0) {
+                updateMarkers(allIssues);
+            }
+        }
+
+        function setMapType(type) {
+            if (!map) return;
+            map.setMapTypeId(type === 'hybrid' ? google.maps.MapTypeId.HYBRID : google.maps.MapTypeId.ROADMAP);
+
+            // Update UI buttons
+            const roadmapBtn = document.getElementById('btn-roadmap');
+            const hybridBtn = document.getElementById('btn-hybrid');
+
+            if (type === 'hybrid') {
+                hybridBtn.className = 'px-3 py-1.5 rounded-lg text-xs font-bold bg-blue-600 text-white shadow-sm transition-all';
+                roadmapBtn.className = 'px-3 py-1.5 rounded-lg text-xs font-bold text-slate-500 hover:bg-slate-50 transition-all';
+            } else {
+                roadmapBtn.className = 'px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-100 text-slate-900 shadow-sm transition-all';
+                hybridBtn.className = 'px-3 py-1.5 rounded-lg text-xs font-bold text-slate-500 hover:bg-slate-50 transition-all';
+            }
+        }
+
+        function toggleHeatmap() {
+            isHeatmapEnabled = !isHeatmapEnabled;
+
+            // UI Toggle
+            const toggleBg = document.getElementById('heatmap-toggle');
+            const toggleDot = toggleBg.querySelector('div');
+
+            if (isHeatmapEnabled) {
+                heatmap.setMap(map);
+                toggleBg.classList.replace('bg-slate-200', 'bg-blue-500');
+                toggleDot.classList.replace('left-0', 'right-0');
+
+                // Disable clustering visually
+                if (isClusteringEnabled) {
+                    // We don't change the state variable, just the visual representation
+                    toggleClustering(true); // Force off visually without changing state if we want to restore logic later
+                }
+            } else {
+                heatmap.setMap(null);
+                toggleBg.classList.replace('bg-blue-500', 'bg-slate-200');
+                toggleDot.classList.replace('right-0', 'left-0');
+            }
+            updateMarkers(allIssues);
+        }
+
+        function toggleClustering(forceOff = false) {
+            if (forceOff) {
+                // Just update UI to look off if needed, or we just handle logic in updateMarkers
+            } else {
+                isClusteringEnabled = !isClusteringEnabled;
+            }
+
+            // UI Toggle logic
+            const toggleBg = document.getElementById('cluster-toggle');
+            const toggleDot = toggleBg.querySelector('div');
+
+            if (isClusteringEnabled && !isHeatmapEnabled) {
+                toggleBg.classList.replace('bg-slate-200', 'bg-blue-500');
+                toggleDot.classList.replace('left-0', 'right-0');
+            } else {
+                toggleBg.classList.replace('bg-blue-500', 'bg-slate-200');
+                toggleDot.classList.replace('right-0', 'left-0');
+            }
+
+            if (!forceOff) updateMarkers(allIssues);
+        }
+
+        function applyMapFilters() {
+            currentMapFilter = document.getElementById('mapFilter').value;
+            updateMarkers(allIssues);
+        }
+
+        async function loadIssues() {
+            try {
+                const status = document.getElementById('statusFilter').value;
+                const issues = await api.get(`/issues${status ? '?status=' + status : ''}`);
+                allIssues = issues;
+                renderQueue(issues);
+                updateMarkers(issues);
+                document.getElementById('queueCount').textContent = issues.length;
+            } catch (error) {
+                console.error('Failed to sync queue', error);
+            }
+        }
+
+        function renderQueue(issues) {
+            const queue = document.getElementById('issueQueue');
+            if (issues.length === 0) {
+                queue.innerHTML = `<div class="py-20 text-center text-[10px] font-black text-slate-300 uppercase tracking-widest">No intelligence found</div>`;
+                return;
+            }
+
+            queue.innerHTML = issues.map(issue => `
+                <div onclick="selectIssue(${issue.id})" id="issue-${issue.id}" class="p-6 rounded-2xl border border-slate-100 bg-white hover:border-blue-200 hover:shadow-xl hover:shadow-blue-500/5 transition-all cursor-pointer group">
+                    <div class="flex justify-between items-start mb-4">
+                        <span class="status-badge status-${issue.status.toLowerCase().replace('_', '-')}">${issue.status}</span>
+                        <span class="text-[9px] font-black text-slate-300 uppercase tracking-widest">${new Date(issue.created_at).toLocaleDateString()}</span>
+                    </div>
+                    <h4 class="font-black text-slate-800 text-sm tracking-tight mb-2 group-hover:text-blue-600 transition-colors">${issue.title}</h4>
+                    <div class="flex items-center gap-2 text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                        <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /></svg>
+                        ${issue.reported_by} <span class="mx-1 opacity-30">•</span> Priority ${issue.severity}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function updateMarkers(issues) {
+            // Safety check: ensure map API is loaded
+            if (typeof google === 'undefined' || !map) return;
+
+            // Clear existing markers/clusters
+            if (markerCluster) {
+                markerCluster.clearMarkers();
+                markerCluster = null;
+            }
+            markers.forEach(m => m.setMap(null));
+            markers = [];
+
+            const bounds = new google.maps.LatLngBounds();
+            const heatmapData = [];
+
+            // Filter logic
+            const filteredIssues = issues.filter(i => {
+                if (currentMapFilter === 'ALL') return true;
+                return i.severity === currentMapFilter; // Assuming severity matches values CRITICAL, MODERATE, LOW
+            });
+
+            filteredIssues.forEach(issue => {
+                const pos = { lat: parseFloat(issue.latitude), lng: parseFloat(issue.longitude) };
+                heatmapData.push(new google.maps.LatLng(pos.lat, pos.lng));
+
+                const marker = new google.maps.Marker({
+                    position: pos,
+                    map: isHeatmapEnabled ? null : map, // Only show if heatmap is off
+                    icon: {
+                        path: google.maps.SymbolPath.CIRCLE,
+                        scale: 8,
+                        fillColor: getStatusColor(issue.status),
+                        fillOpacity: 1,
+                        strokeWeight: 4,
+                        strokeColor: "#ffffff"
+                    },
+                    title: issue.title
+                });
+
+                marker.addListener('click', () => selectIssue(issue.id));
+                markers.push(marker);
+                bounds.extend(pos);
+            });
+
+            // Update Heatmap Data
+            if (heatmap) {
+                heatmap.setData(heatmapData);
+            }
+
+            // Apply Clustering if enabled and heatmap is off
+            if (isClusteringEnabled && !isHeatmapEnabled && markers.length > 0) {
+                markerCluster = new markerClusterer.MarkerClusterer({ map, markers });
+            }
+
+            if (filteredIssues.length > 0 && !map.getBounds()) {
+                map.fitBounds(bounds);
+            }
+        }
+
+
+        // ==========================================
+        // INNOVATION LABS: VOICE & PATROL
+        // ==========================================
+
+        function initVoiceControl() {
+            if ('webkitSpeechRecognition' in window) {
+                recognition = new webkitSpeechRecognition();
+                recognition.continuous = false;
+                recognition.lang = 'en-US';
+
+                recognition.onstart = function () {
+                    isListening = true;
+                    document.getElementById('voiceWave').classList.add('animate-pulse', 'opacity-50');
+                };
+
+                recognition.onend = function () {
+                    isListening = false;
+                    document.getElementById('voiceWave').classList.remove('animate-pulse', 'opacity-50');
+                };
+
+                recognition.onresult = function (event) {
+                    const transcript = event.results[0][0].transcript.toLowerCase();
+                    console.log('Voice Command:', transcript);
+                    processVoiceCommand(transcript);
+                };
+            } else {
+                document.getElementById('voiceBtn').style.display = 'none';
+                console.log('Voice API not supported');
+            }
+        }
+
+        function toggleVoice() {
+            if (isListening) recognition.stop();
+            else recognition.start();
+        }
+
+        function processVoiceCommand(cmd) {
+            const feedback = (msg) => {
+                const badge = document.createElement('div');
+                badge.className = 'fixed top-20 left-1/2 -translate-x-1/2 bg-slate-900 text-white px-4 py-2 rounded-full text-xs font-bold z-[200] animate-bounce';
+                badge.innerText = `AI: "${msg}"`;
+                document.body.appendChild(badge);
+                setTimeout(() => badge.remove(), 2000);
+            };
+
+            if (cmd.includes('critical') || cmd.includes('urgent')) {
+                document.getElementById('mapFilter').value = 'CRITICAL';
+                applyMapFilters();
+                feedback('Filtering Critical Issues');
+            }
+            else if (cmd.includes('satellite') || cmd.includes('view')) {
+                setMapType('hybrid');
+                feedback('Switching to Satellite');
+            }
+            else if (cmd.includes('map') || cmd.includes('road')) {
+                setMapType('roadmap');
+                feedback('Switching to Road Map');
+            }
+            else if (cmd.includes('patrol') || cmd.includes('scan')) {
+                startPatrol();
+                feedback('Initiating Surveillance Pattern');
+            }
+            else if (cmd.includes('stop') || cmd.includes('abort')) {
+                stopPatrol();
+                setMapType('roadmap');
+                document.getElementById('mapFilter').value = 'ALL';
+                applyMapFilters();
+                feedback('Systems Reset');
+            }
+            else {
+                feedback('Command Not Recognized');
+            }
+        }
+
+        function togglePatrol() {
+            if (isPatrolActive) stopPatrol();
+            else startPatrol();
+        }
+
+        function startPatrol() {
+            if (!map || allIssues.length === 0) return alert('No targets for patrol.');
+            isPatrolActive = true;
+
+            // Visuals
+            document.getElementById('patrolBtn').classList.replace('bg-indigo-600', 'bg-red-600');
+            document.getElementById('patrolBtn').querySelector('span').innerText = 'Stop Patrol';
+            document.getElementById('patrolOverlay').classList.remove('hidden');
+
+            // Map Mode
+            map.setTilt(45);
+            setMapType('hybrid');
+            map.setZoom(18);
+
+            let index = 0;
+            const loop = () => {
+                if (!isPatrolActive) return;
+
+                const issue = allIssues[index];
+                if (issue) {
+                    map.panTo({ lat: parseFloat(issue.latitude), lng: parseFloat(issue.longitude) });
+                    selectIssue(issue.id); // Open details panel for "Scanning" effect
+                }
+
+                index = (index + 1) % allIssues.length;
+                patrolInterval = setTimeout(loop, 4000); // 4 seconds per target
+            };
+
+            loop();
+        }
+
+        function stopPatrol() {
+            isPatrolActive = false;
+            clearTimeout(patrolInterval);
+
+            // Reset Visuals
+            document.getElementById('patrolBtn').classList.replace('bg-red-600', 'bg-indigo-600');
+            document.getElementById('patrolBtn').querySelector('span').innerText = 'Patrol Mode';
+            document.getElementById('patrolOverlay').classList.add('hidden');
+
+            // Reset Map
+            map.setTilt(0);
+            map.setZoom(5);
+            setMapType('roadmap');
+            closeDetails();
+        }
+
+        function getStatusColor(status) {
+            switch (status) {
+                case 'RESOLVED': return '#10b981'; // Green
+                case 'IN_PROGRESS': return '#f59e0b'; // Yellow
+                case 'REJECTED': return '#ef4444'; // Red
+                case 'SUBMITTED': return '#ef4444'; // Red
+                default: return '#ef4444';
+            }
+        }
+
+        let selectedIssueId = null;
+        async function selectIssue(id) {
+            selectedIssueId = id;
+            document.querySelectorAll('[id^="issue-"]').forEach(el => el.classList.remove('ring-2', 'ring-blue-500', 'border-blue-500'));
+
+            const issueEl = document.getElementById(`issue-${id}`);
+            if (issueEl) issueEl.classList.add('ring-2', 'ring-blue-500', 'border-blue-500');
+
+            // Auto-close sidebar on mobile
+            if (window.innerWidth < 768) {
+                document.getElementById('sidebar').classList.add('-translate-x-full');
+                document.getElementById('sidebarOverlay').classList.add('hidden');
+            }
+
+            try {
+                const issue = await api.get(`/issues/${id}`);
+                populateDetails(issue);
+            } catch (error) {
+                alert('Intelligence Retrieval Error');
+            }
+        }
+
+        function populateDetails(issue) {
+            document.getElementById('detailTitle').textContent = issue.title;
+            document.getElementById('detailStatus').textContent = issue.status;
+            document.getElementById('detailStatus').className = `status-badge status-${issue.status.toLowerCase().replace('_', '-')}`;
+            document.getElementById('detailDate').textContent = new Date(issue.created_at).toLocaleString();
+            document.getElementById('detailDesc').textContent = issue.description;
+
+            const mediaContainer = document.getElementById('mediaContainer');
+            const imageBox = document.getElementById('imageBox');
+            const videoBox = document.getElementById('videoBox');
+
+            imageBox.classList.toggle('hidden', !issue.image_url);
+            if (issue.image_url) document.getElementById('detailImage').src = issue.image_url;
+
+            videoBox.classList.toggle('hidden', !issue.video_url);
+            if (issue.video_url) document.getElementById('detailVideo').src = issue.video_url;
+
+            mediaContainer.classList.toggle('hidden', !issue.image_url && !issue.video_url);
+
+            document.getElementById('updateStatus').value = issue.status === 'SUBMITTED' ? 'IN_PROGRESS' : issue.status;
+            document.getElementById('updateRemark').value = '';
+
+            // Handle History Timeline
+            const historyTimeline = document.getElementById('historyTimeline');
+            const historySection = document.getElementById('historySection');
+
+            if (issue.history && issue.history.length > 0) {
+                historySection.classList.remove('hidden');
+                historyTimeline.innerHTML = issue.history.map(h => `
+                    <div class="relative pl-6 pb-2 border-l-2 border-slate-100">
+                        <div class="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-slate-100 border-2 border-white"></div>
+                        <div class="bg-slate-50 p-4 rounded-2xl space-y-1">
+                            <div class="flex justify-between items-start">
+                                <span class="status-badge scale-75 -ml-2 status-${h.status.toLowerCase().replace('_', '-')}">${h.status}</span>
+                                <span class="text-[8px] font-black text-slate-400 uppercase tracking-widest">${new Date(h.updated_at).toLocaleString()}</span>
+                            </div>
+                            <p class="text-[11px] text-slate-600 font-medium">${h.remark}</p>
+                            <p class="text-[8px] font-black text-blue-600 uppercase tracking-widest pt-2">Updated by ${h.updated_by_name}</p>
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                historySection.classList.add('hidden');
+            }
+
+            document.getElementById('detailPanel').classList.remove('hidden');
+            if (window.innerWidth < 768) {
+                document.getElementById('detailOverlay').classList.remove('hidden');
+            }
+        }
+
+        function openAnalytics() {
+            document.getElementById('analyticsModal').classList.remove('hidden');
+        }
+
+
+
+        function closeDetails() {
+            document.getElementById('detailPanel').classList.add('hidden');
+            document.getElementById('detailOverlay').classList.add('hidden');
+        }
+
+        async function submitStatusUpdate() {
+            const btn = document.getElementById('updateBtn');
+            const status = document.getElementById('updateStatus').value;
+            const remark = document.getElementById('updateRemark').value;
+
+            if (!remark) return alert('Remarks are strictly required for operational transparency.');
+
+            btn.disabled = true;
+            btn.textContent = 'Executing...';
+
+            try {
+                await api.patch(`/issues/${selectedIssueId}/status`, { status, remark });
+                alert('Operational status updated.');
+                loadIssues();
+                closeDetails();
+            } catch (error) {
+                alert('Update failure: ' + error.message);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Execute Update';
+            }
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Profile | JantaReport</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="../css/style.css">
+    <style>
+        @media (max-width: 578px) {
+            body {
+                padding-bottom: 80px;
+            }
+        }
+    </style>
+</head>
+
+<body class="bg-slate-50 min-h-screen">
+    <!-- Mobile Header -->
+    <header class="md:hidden pt-12 px-6 pb-6 bg-white border-b border-slate-100 sticky top-0 z-50">
+        <div class="flex items-center gap-4">
+            <button onclick="window.location.href='dashboard.html'"
+                class="w-10 h-10 flex items-center justify-center bg-slate-50 rounded-xl">
+                <svg class="w-5 h-5 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                </svg>
+            </button>
+            <h1 class="text-xl font-black text-slate-900 tracking-tight">Account Settings</h1>
+        </div>
+    </header>
+
+    <!-- Desktop Nav -->
+    <nav class="hidden md:block glass sticky top-0 z-50 px-8 py-4 mb-8">
+        <div class="max-w-5xl mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-3 cursor-pointer" onclick="window.location.href='dashboard.html'">
+                <div class="w-8 h-8 grad-main rounded-lg flex items-center justify-center shadow-lg"><span
+                        class="text-white font-black text-sm">J</span></div>
+                <span class="text-sm font-black tracking-tight text-slate-900 uppercase">JantaReport</span>
+            </div>
+            <button onclick="auth.logout()"
+                class="text-rose-600 font-black text-xs uppercase tracking-widest">Logout</button>
+        </div>
+    </nav>
+
+    <main class="max-w-2xl mx-auto px-6 py-4 md:py-12 space-y-8 animate-fade-in">
+        <!-- Profile Header -->
+        <div class="flex flex-col items-center text-center space-y-4">
+            <div class="w-24 h-24 grad-main rounded-[2rem] flex items-center justify-center shadow-2xl relative">
+                <span id="nameInitial" class="text-4xl text-white font-black">?</span>
+                <div class="absolute -bottom-2 -right-2 w-8 h-8 bg-emerald-500 border-4 border-slate-50 rounded-full">
+                </div>
+            </div>
+            <div>
+                <h2 id="displayTitleName" class="text-2xl font-black text-slate-900">Loading...</h2>
+                <p id="displayEmail" class="text-slate-400 font-bold text-xs uppercase tracking-widest mt-1">Fetching
+                    details</p>
+            </div>
+        </div>
+
+        <!-- Stats Card -->
+        <div class="grid grid-cols-2 gap-4">
+            <div class="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm text-center">
+                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Reports Filed</p>
+                <h3 id="statTotalIssues" class="text-2xl font-black text-slate-900">0</h3>
+            </div>
+            <div class="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm text-center">
+                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Impact Level</p>
+                <h3 class="text-2xl font-black text-blue-600">Gold</h3>
+            </div>
+        </div>
+
+        <!-- Edit Form -->
+        <div class="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm space-y-6">
+            <h4 class="text-xs font-black text-slate-900 uppercase tracking-widest border-b border-slate-50 pb-4">
+                Personal Information</h4>
+
+            <form id="profileForm" class="space-y-6">
+                <div class="space-y-1.5">
+                    <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Full
+                        Name</label>
+                    <input type="text" id="profileName" required class="input-field" placeholder="Enter your name">
+                </div>
+                <div class="space-y-1.5 opacity-60">
+                    <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Email
+                        (Locked)</label>
+                    <input type="email" id="profileEmail" readonly class="input-field bg-slate-50 cursor-not-allowed">
+                </div>
+                <button type="submit" id="updateBtn"
+                    class="btn-primary w-full py-4 text-xs tracking-widest uppercase">Save Changes</button>
+            </form>
+        </div>
+
+        <!-- Security -->
+        <div class="bg-slate-900 p-8 rounded-[2.5rem] text-white shadow-2xl relative overflow-hidden group">
+            <div class="relative z-10 space-y-4">
+                <div>
+                    <h4 class="text-lg font-black tracking-tight">Data Integrity</h4>
+                    <p class="text-slate-400 text-xs font-medium">Your data is secured with end-to-end encryption
+                        protocols.</p>
+                </div>
+                <button onclick="auth.logout()"
+                    class="w-full py-3 bg-white/10 hover:bg-rose-500/20 text-xs font-black uppercase tracking-widest rounded-2xl transition-all border border-white/10">Sign
+                    Out of All Devices</button>
+            </div>
+            <div
+                class="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full -mr-16 -mt-16 group-hover:scale-150 transition-transform duration-700">
+            </div>
+        </div>
+    </main>
+
+    <!-- Bottom Navigation (Mobile Only) -->
+    <nav class="mobile-bottom-nav">
+        <button onclick="window.location.href='dashboard.html'" class="nav-item">
+            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+            </svg>
+            <span class="text-[10px]">Home</span>
+        </button>
+        <button onclick="window.location.href='dashboard.html?action=report'" class="nav-item">
+            <div class="w-10 h-10 grad-main rounded-full flex items-center justify-center text-white -mt-8 shadow-lg">
+                <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4" />
+                </svg>
+            </div>
+            <span class="text-[10px] mt-1">Report</span>
+        </button>
+        <button class="nav-item active">
+            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
+            </svg>
+            <span class="text-[10px]">Profile</span>
+        </button>
+    </nav>
+
+    <script src="../js/api.js"></script>
+    <script>
+        window.onload = async () => {
+            const user = auth.getUser();
+            if (!user) return window.location.href = '../login.html';
+            loadProfile();
+        };
+
+        async function loadProfile() {
+            try {
+                const profile = await api.get('/auth/profile');
+                document.getElementById('displayTitleName').textContent = profile.name;
+                document.getElementById('displayEmail').textContent = profile.email;
+                document.getElementById('profileName').value = profile.name;
+                document.getElementById('profileEmail').value = profile.email;
+                document.getElementById('nameInitial').textContent = profile.name.charAt(0).toUpperCase();
+                document.getElementById('statTotalIssues').textContent = profile.totalIssues;
+            } catch (error) {
+                console.error('Profile fetch failed', error);
+                if (error.message.includes('Token')) auth.logout();
+            }
+        }
+
+        document.getElementById('profileForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('updateBtn');
+            const name = document.getElementById('profileName').value;
+
+            btn.disabled = true;
+            btn.textContent = 'Updating...';
+
+            try {
+                await api.request('/auth/profile', {
+                    method: 'PATCH',
+                    body: JSON.stringify({ name })
+                });
+
+                // Update local storage name cache
+                const user = auth.getUser();
+                user.name = name;
+                auth.login(auth.getToken(), user);
+
+                loadProfile();
+                alert('Profile protocol updated successfully!');
+            } catch (error) {
+                alert('Sync Failure: ' + error.message);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Save Changes';
+            }
+        });
+    </script>
+</body>
+
+</html>

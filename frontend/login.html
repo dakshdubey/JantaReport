@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login | JantaReport</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body class="mesh-bg min-h-screen flex items-center justify-center p-6">
+    <div class="max-w-md w-full space-y-12 animate-fade-in">
+        <!-- Brand Identity -->
+        <div class="text-center space-y-6">
+            <div
+                class="inline-flex w-20 h-20 grad-main rounded-[2.5rem] items-center justify-center shadow-[0_20px_50px_-10px_rgba(37,99,235,0.4)] mb-2 group cursor-pointer transition-transform duration-700 hover:rotate-[360deg]">
+                <span class="text-white font-black text-4xl">J</span>
+            </div>
+            <div class="space-y-2">
+                <h1 class="text-5xl font-black text-slate-900 tracking-tighter leading-none">JantaReport</h1>
+                <p class="text-[10px] text-slate-400 font-black uppercase tracking-[0.4em]">Digital Sovereignty Portal
+                </p>
+            </div>
+        </div>
+
+        <!-- Floating Glass Form -->
+        <div
+            class="bg-white/70 backdrop-blur-3xl p-10 md:p-12 rounded-[3.5rem] shadow-[0_40px_100px_-20px_rgba(0,0,0,0.1)] border border-white/60 relative overflow-hidden">
+            <div class="relative z-10 space-y-8">
+                <div>
+                    <h2 class="text-2xl font-black text-slate-900 tracking-tight">Citizen Access</h2>
+                    <p class="text-[11px] text-slate-500 font-bold uppercase tracking-widest mt-1">Provide credentials
+                        to initialize session</p>
+                </div>
+
+                <form id="loginForm" class="space-y-6">
+                    <div class="space-y-2">
+                        <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Identity
+                            Vector (Email)</label>
+                        <input type="email" id="email" required class="input-field py-4.5 bg-white/50"
+                            placeholder="name@domain.gov">
+                    </div>
+                    <div class="space-y-2">
+                        <div class="flex justify-between items-center ml-1">
+                            <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Authorization
+                                Key</label>
+                            <a href="#"
+                                class="text-[9px] font-black text-blue-600 uppercase tracking-[0.2em] hover:text-blue-700 transition-colors">Reset
+                                Key</a>
+                        </div>
+                        <input type="password" id="password" required class="input-field py-4.5 bg-white/50"
+                            placeholder="••••••••" autocomplete="current-password">
+                    </div>
+
+                    <button type="submit" id="loginBtn"
+                        class="btn-primary w-full py-5 text-xs tracking-[0.3em] mt-4">ESTABLISH SESSION</button>
+                </form>
+
+                <div class="pt-8 border-t border-slate-100/50 text-center">
+                    <p class="text-xs font-bold text-slate-500 uppercase tracking-widest">
+                        Unauthorized Node?
+                        <a href="register.html" class="text-blue-600 font-black hover:underline ml-1">Initialize
+                            Identity</a>
+                    </p>
+                </div>
+            </div>
+
+            <!-- Ambient Light Leak -->
+            <div class="absolute -top-24 -right-24 w-48 h-48 bg-blue-500/10 blur-3xl rounded-full"></div>
+        </div>
+
+        <!-- Global Trust Banner -->
+        <div class="text-center opacity-40">
+            <p class="text-[9px] font-black text-slate-400 uppercase tracking-[0.5em]">Secured by National Encryption
+                Protocol v2.4</p>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script>
+        auth.redirectIfLoggedIn();
+
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('loginBtn');
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            btn.disabled = true;
+            btn.textContent = 'VALIDATING NODE...';
+
+            try {
+                const response = await api.post('/auth/login', { email, password });
+                if (response.user.role !== 'CITIZEN') {
+                    throw new Error('Please utilize the Authority Hub portal.');
+                }
+                auth.login(response.token, response.user);
+                window.location.href = 'citizen/dashboard.html';
+            } catch (error) {
+                alert('Authentication Sync Failure: ' + error.message);
+                btn.disabled = false;
+                btn.textContent = 'ESTABLISH SESSION';
+            }
+        });
+    </script>
+</body>
+
+</html>
